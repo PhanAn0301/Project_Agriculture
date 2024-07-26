@@ -1,0 +1,30 @@
+{% extends 'base.html' %}
+{% block body %}
+    <h1>Test - Latest Data</h1>
+    <p id="temperature">{{data.temperature}}</p>
+    <p id="humidity">{{data.humidity}}</p>
+    <p id="soil">{{data.soil}}</p>
+    <script>
+        $(document).ready(function() {
+            function updateData() {
+                $.ajax({
+                    url: '/callback/',
+                    type: 'GET',
+                    dataType: 'json',
+                    success: function(data) {
+                        $('#temperature').text(data.temperature);
+                        $('#humidity').text(data.humidity);
+                        $('#soil').text(data.soil);
+                    },
+                    error: function(error) {
+                        console.log('Error:', error);
+                    }
+                });
+            }
+
+            // Initial call to start updating data
+            updateData();
+            setInterval(updateData, 3000);
+        });
+    </script>
+{% endblock %}

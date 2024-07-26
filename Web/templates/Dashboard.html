@@ -1,0 +1,57 @@
+{% extends 'base.html' %}
+{% block body %}
+<div class="flex flex-row space-x-16 h-32 mx-32 my-8">
+    <div class="basis-1/4 rounded-lg border-2 border-lime-600 p-4">
+        <div class="flex flex-col">
+            <img src="../static/image/thermometer.png" height="50" width="50" class="mx-20">
+            <span class="font-bold px-24">{{data.temperature}}°C</span>
+            <span class="font-bold px-16">Temperature</span>
+        </div>
+    </div>
+    <div class="basis-1/4 rounded-lg border-2 border-lime-600 p-4">
+        <div class="flex flex-col">
+            <img src="../static/image/humidity.png" height="50" width="50" class="mx-20">
+            <span class="font-bold px-24">{{data.humidity}}%</span>
+            <span class="font-bold px-20">Humidity</span>
+        </div>
+    </div>
+    <div class="basis-1/4 rounded-lg border-2 border-lime-600 p-4">
+        <div class="flex flex-col">
+            <img src="../static/image/soil-moisture-field-icon-512x512-4yjmtl0z.png" height="50" width="50" class="mx-20">
+            <span class="font-bold px-24">24%</span>
+            <span class="font-bold px-14">Soil Moisture </span>
+        </div>
+    </div>
+    <div class="basis-1/4 rounded-lg border-2 border-lime-600 p-4">
+        <div class="flex flex-col">
+            <span class="font-bold px-14">Engine control</span>
+            <button id="toggleButton" type="button" class="m-4 text-gray-900 bg-white border border-gray-300 focus:outline-none hover:bg-gray-100 focus:ring-4 focus:ring-gray-100 font-medium rounded-full text-sm px-5 py-2.5 me-2 mb-2 dark:bg-gray-800 dark:text-white dark:border-gray-600 dark:hover:bg-gray-700 dark:hover:border-gray-600 dark:focus:ring-gray-700"></button>        
+        </div>
+    </div>
+</div>
+
+<script>
+    $(document).ready(function () {
+            $('#toggleButton').click(function () {
+                var button_text = $(this).text();
+                $.ajax({
+                    type: 'GET',
+                    url: '/update_button_status',
+                    data: { value: button_text },
+                    success: function (response) {
+                        $('#toggleButton').text(response.button_text);
+                        if (response.button_text === 'ON') {
+                            $('#toggleButton').css('background-color', 'green');
+                        } else {
+                            $('#toggleButton').css('background-color', 'red');
+                        }
+                    },
+                    error: function (error) {
+                        console.log(error);
+                    }
+                });
+            });
+        });
+</script>
+{% endblock %}
+

@@ -1,0 +1,202 @@
+{% extends 'base.html' %}
+{% block body %}
+<div class="flex flex-row">
+    <div class="basis-1/2 m-4 p-4 rounded-lg border-2 border-lime-600">
+        <div class="flex flex-row">
+            <div class="basis-4/5">
+                <span class="font-bold">Today's Highlight</span>
+                <span id="city"></span>
+                <div class="flex flex-row p-8">
+                    <div class="basis-1/2 text-2xl">
+                        <img id="weatherIcon" src="" height="120" width="120">
+                        <span id="description"></span>
+                    </div>
+                    <div class="basis-1/2 text-5xl p-8">
+                        <span id="data_temparature"></span>
+                    </div>
+                </div>
+            </div>
+            <div class="basis-1/5">
+                <div class="flex flex-col">
+                    <img src="../static/image/humidity.png" height="45" width="45">
+                    <span id="data_humidity" class="font-bold"></span>
+                    <span class="mb-5">Humidity</span>
+                    <img src="../static/image/wind.png" height="45" width="45">
+                    <span id="data_wind" class="font-bold"></span>
+                    <span>Wind</span>
+                </div>
+            </div>
+        </div>
+    </div>
+    <div class="basis-1/2 m-4 p-4 rounded-lg border-2 border-lime-600 ">
+        <canvas id="temperatureHumidityChart" height="110"></canvas>
+    </div>
+</div>
+
+<span class="px-4 pt-16 font-bold">7 Day Forecast</span>
+<div class="flex flex-row pt-2">
+    <div class="grid grid-cols-8 gap-4">
+        {% for i in range(1, 9) %}
+        <div class="rounded-lg border-2 border-lime-600 h-66 mx-4">
+            <div class="flex flex-col py-6" id="weather-forecast-day{{i}}">
+                <span  class="pl-14 font-bold"></span>
+                <img src="" height="150" width="150" class="p-4">
+                <span  class="pl-14 font-bold"></span>
+            </div>
+        </div>
+        {% endfor %}
+    </div>
+</div>
+
+<script>
+    const API_KEY = "52926eb0a55d0398cd06cda1eb642a6b";
+    const API_URL = "https://api.openweathermap.org/data/2.5/weather?lat=10.776530&lon=106.700981&appid=" + API_KEY;
+    const API_URL_8day = 'https://api.openweathermap.org/data/2.5/forecast/daily?lat=10.776530&lon=106.700981&cnt=9&appid=' + API_KEY;
+    const API_URL_hourly = 'https://api.openweathermap.org/data/2.5/forecast?lat=10.776530&lon=106.700981&appid=' + API_KEY;
+
+    async function getWeatherHourly() {
+        const response = await fetch(API_URL_hourly);
+        const data = await response.json();
+        const hours = [];
+        const temperatureData = [];
+        const humidityData = []; 
+        for (let i = 1; i < 10; i++) {
+            var dateTime = new Date(data.list[i].dt_txt);
+            var hour = dateTime.getHours();
+            var minute = dateTime.getMinutes();
+            var formattedTime = ("0" + hour).slice(-2) + ":" + ("0" + minute).slice(-2);
+            hours.push(formattedTime);
+            temperatureData.push(Math.round(data.list[i].main.temp - 273));
+            humidityData.push(data.list[i].main.humidity)
+        }
+        return { hours, temperatureData, humidityData };
+    }
+
+    async function getCurrentWeather() {
+        const response = await fetch(API_URL);
+        const data = await response.json();
+        document.getElementById("city").innerHTML = data.name;
+        document.getElementById("data_temparature").innerHTML = Math.round(data.main.temp - 273) + ' °C';
+        document.getElementById("data_wind").innerHTML = data.wind.speed + ' km/h';
+        document.getElementById("data_humidity").innerHTML = data.main.humidity + ' %';
+        const description = data.weather[0].description;
+        const capitalizedDescription = description.charAt(0).toUpperCase() + description.slice(1);
+        document.getElementById("description").innerHTML = capitalizedDescription;
+        switch (data.weather[0].main) {
+            case 'Thunderstorm':
+                document.getElementById("weatherIcon").src = '../static/image/thunderstorm.png';
+                break;
+            case 'Clouds':
+                document.getElementById("weatherIcon").src = '../static/image/cloud (1).png';
+                break;
+            case 'Drizzle':
+                document.getElementById("weatherIcon").src = '../static/image/rainy-day.png';
+                break;
+            case 'Clear':
+                document.getElementById("weatherIcon").src = '../static/image/clear-sky.png';
+                break;
+            default:
+                document.getElementById("weatherIcon").src = ''; 
+        }
+    }
+
+    async function getWeatherForecast() {
+        const response = await fetch(API_URL_8day);
+        const data = await response.json();
+        for (let i = 1; i < data.list.length; i++) {
+            var divElement = document.getElementById(`weather-forecast-day${i}`);
+            var children = divElement.children;
+            const date = new Date(data.list[i].dt * 1000);
+            const dayOfWeek = date.getDay();
+            const weekdays = ['SUN', 'MON', 'TUE', 'WED', 'THU', 'FRI', 'SAT'];
+            children[0].innerHTML = weekdays[dayOfWeek];
+            const weatherIcon = children[1];
+            switch (data.list[i].weather[0].main) {
+                case 'Thunderstorm':
+                    weatherIcon.src = '../static/image/thunderstorm.png';
+                    break;
+                case 'Clouds':
+                    weatherIcon.src = '../static/image/cloud (1).png';
+                    break;
+                case 'Drizzle':
+                    weatherIcon.src = '../static/image/rainy-day.png';
+                    break;
+                case 'Clear':
+                    weatherIcon.src = '../static/image/clear-sky.png';
+                    break;
+                case 'Rain':
+                    weatherIcon.src = '../static/image/heavy-rain.png';
+                    break;
+                default:
+                    weatherIcon.src = ''; 
+            }
+            children[2].innerHTML = Math.round(data.list[i].temp.day - 273) + ' °C';
+        }
+    }
+
+    getWeatherForecast(); 
+    getCurrentWeather(); 
+
+    getWeatherHourly().then(data => {
+    const config = {
+        type: 'line',
+        data: {
+            labels: data.hours, 
+            datasets: [{
+                label: 'Temperature (°C)',
+                data: data.temperatureData,
+                borderColor: 'rgb(255, 99, 132)',
+                backgroundColor: 'rgba(255, 99, 132, 0.2)',
+                yAxisID: 'temperature',
+            }, {
+                label: 'Humidity (%)',
+                data: data.humidityData,
+                borderColor: 'rgb(54, 162, 235)',
+                backgroundColor: 'rgba(54, 162, 235, 0.2)',
+                yAxisID: 'humidity',
+            }]
+        },
+        options: {
+            responsive: true,
+            plugins: {
+                title: {
+                    display: true,
+                    text: 'Temperature and Humidity Forecast'
+                }
+            },
+            scales: {
+                temperature: {
+                    position: 'left',
+                    beginAtZero: true,
+                    title: {
+                        display: true,
+                        text: 'Temperature (°C)'
+                    }
+                },
+                humidity: {
+                    position: 'right',
+                    beginAtZero: true,
+                    title: {
+                        display: true,
+                        text: 'Humidity (%)'
+                    }
+                },
+                x: {
+                    title: {
+                        display: true,
+                        text: 'Hour'
+                    }
+                }
+            }
+        }
+    };
+
+    // Render the chart
+    const ctx = document.getElementById('temperatureHumidityChart').getContext('2d');
+    const myChart = new Chart(ctx, config);
+});
+
+</script>
+{% endblock %}
+
+
